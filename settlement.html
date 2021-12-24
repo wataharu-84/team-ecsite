@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8" />
+	
+	<link href="/css/reset.css" th:href="@{/css/reset.css}" rel="stylesheet" />
+	<link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+	
+	<title>Sirius SelectShop</title>
+</head>
+<body>
+
+<header th:insert="fragments/page_header::pageHeader"></header>
+
+<main>
+	<div class="container cart">
+		<div class="completed hidden">
+			<p class="info">決済が完了しました。</p>
+		</div>
+		<div th:if="${destinations == null || destinations.size() == 0}">
+			<p class="info">宛先情報がありません。新規登録してください。</p>
+		</div>
+		<div th:if="${destinations != null && destinations.size() > 0}">
+			<h2>宛先を選択し、決済を完了します。</h2>
+			<p class="info">宛先の新規登録、削除も可能です。</p>
+		</div>
+		<table class="destination" th:if="${destinations != null && destinations.size() > 0}">
+			<thead>
+				<tr>
+					<th>選択</th>
+					<th>宛先氏名</th>
+					<th>住所</th>
+					<th>電話番号</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="destinations,interStat:${destinations}">
+					<td><input type="radio" class="radio" name="id" th:value="${destinations.id}" th:checked="${interStat.first}" /></td>
+					<td th:text="${destinations.familyName} + ' ' + ${destinations.firstName}" />
+					<td th:text="${destinations.address}" />
+					<td th:text="${destinations.telNumber}" />
+				</tr>
+			</tbody>
+		</table>
+		
+		<div class="buttonArea">
+			<button id="deleteBtn" th:if="${destinations != null && destinations.size() > 0}">削除</button>
+			<form name="destinationForm" action="/sirius/destination/">
+				<button type="submit">新規宛先</button>
+			</form>
+			<button id="settlementBtn" th:if="${destinations != null && destinations.size() > 0}">決済</button>
+		</div>
+	</div>
+</main>
+
+<script>
+	$(() => {
+		$('#settlementBtn').on('click', () => {
+			let checked = $('.radio:checked');
+			let destinationId = $(checked).val();
+			
+			settlement(destinationId);
+		});
+		
+		$('#deleteBtn').on('click',() => {
+			let checked = $('.radio:checked');
+			let destinationId = $(checked).val();
+			
+			$.ajax({
+				type: 'POST',
+				url: '/sirius/destination/delete',
+				data: JSON.stringify({
+					'destinationId': destinationId
+				}),
+				contentType: 'application/json',
+				scriptCharset: 'utf-8'
+			})
+			.then((result) => {
+					$(checked).parent().parent().remove();
+					location.replace('/sirius/settlement/');
+				}, () => {
+					alert(`Error: ajax connection failed.`);
+				}
+			);
+		});
+	});
+</script>
+
+</body>
+</html>
